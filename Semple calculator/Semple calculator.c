@@ -50,6 +50,7 @@
 #define read_from_calc(addr,dest)  \
 			calc_ctrl_port = IDLE; \
 			calc_data_mode = INPUT; \
+			calc_data_out_port = 0xFF;\	
 			calc_addr_port = (addr) ; \
 			(dest) = calc_data_in_port; \
 			calc_ctrl_port = READ ; \
@@ -61,11 +62,10 @@
 			calc_ctrl_mode = OUTPUT;\
 			write_to_calc( calc_ctrl_reg , control_word );
 		
-const char keys[4][4]={{'7','4','1','o'},
-                       {'8','5','2','0'},
-					   {'9','6','3','='},
-					   {'/','x','-','+'}
-					   };
+char MyKeypad[4][4]={{'7','4','1','N'},
+					{'8','5','2','0'},
+					{'9','6','3','='},
+					{'/','x','-','+'}};
 
 void SEND_TO_LCD(char data , uint8_t mode )
 {
@@ -98,16 +98,19 @@ void print_to_LCD(char *str){
 	}
 }
 
-char Read_from_keypad(){
-	/*while (1)
+char get_key_presed(){
+	while (1)
 	{
-			for (int i=4,tmp;i<8;i++)
+			for (uint8_t i=4,tmp;i<8;i++)
 			{
-				write_to_port(255-(1<<i),Control);
-				tmp=read_from_port(Key);
-				for(int j=0;j<4;j++)if(tmp==(255-(1<<j)))  return keys[i-4][j];
+				write_to_calc(keypad_port,~(1<<i));
+				read_from_calc(keypad_port,tmp);
+				for(int j=0;j<4;j++)
+				{
+					if(tmp == (~(1<<i) & ~(1<<j))) return MyKeypad[i-4][j];
+				}					
 			}
-	}*/
+	}
 }
 
 int Sign_to_Unsign(char *sign,int Num ,int x){
@@ -208,46 +211,14 @@ int calculate(){
 	}
 */
 }
-/*
-int main(void)
-{
-	init_calc();
-	write_to_calc(lcd_data_port,set_size);
-	_delay_ms(1000);
-	write_to_calc(lcd_ctrl_port,2);
-	_delay_ms(1000);
-	write_to_calc(lcd_ctrl_port,0);
-	_delay_ms(1000);
-	write_to_calc(lcd_data_port,clr);
-	_delay_ms(1000);
-	write_to_calc(lcd_ctrl_port,2);
-	_delay_ms(1000);
-	write_to_calc(lcd_ctrl_port,0);
-	_delay_ms(1000);
-	write_to_calc(lcd_data_port,display_on);
-	_delay_ms(1000);
-	write_to_calc(lcd_ctrl_port,2);
-	_delay_ms(1000);
-	write_to_calc(lcd_ctrl_port,0);
-	_delay_ms(1000);
-	write_to_calc(lcd_data_port,start_1st_line);
-	_delay_ms(1000);
-	write_to_calc(lcd_ctrl_port,2);
-	_delay_ms(1000);
-	write_to_calc(lcd_ctrl_port,0);
-	_delay_ms(1000);
-	write_to_calc(lcd_data_port,'d');
-	_delay_ms(1000);
-	write_to_calc(lcd_ctrl_port,3);
-	_delay_ms(1000);
-	write_to_calc(lcd_ctrl_port,1);
-	_delay_ms(1000);
-}*/
 
 int main(void)
 {
 	init_calc();
 	INIT_LCD();
 	print_to_LCD("hello");
+	SEND_TO_LCD(clr,CMD);
+	char ch = get_key_presed();
+	write_to_LCD(ch);
 	return 0;
 }
