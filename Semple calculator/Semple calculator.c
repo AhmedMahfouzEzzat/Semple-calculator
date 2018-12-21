@@ -44,7 +44,7 @@
 			calc_addr_port = (addr) ; \
 			calc_data_out_port = (source) ; \
 			calc_ctrl_port = WRITE ; \
-			_delay_ms(10); \
+			_delay_ms(1); \
 			calc_ctrl_port = IDLE;	
 
 #define read_from_calc(addr,dest)  \
@@ -53,7 +53,7 @@
 			calc_addr_port = (addr) ; \
 			(dest) = calc_data_in_port; \
 			calc_ctrl_port = READ ; \
-			_delay_ms(10); \
+			_delay_ms(1); \
 			calc_ctrl_port = IDLE ; 	
 
 #define init_calc() \
@@ -74,10 +74,9 @@ void SEND_TO_LCD(char data , uint8_t mode )
 	control_lcd = mode ;			//CMD => RS=0 ,DATA =>RS =1 
 	control_lcd |= 2;				// EN = 1
 	write_to_calc(lcd_ctrl_port,control_lcd);
-	_delay_ms(10);
+	_delay_ms(1);
 	control_lcd &= ~2 ;				// EN =0
 	write_to_calc(lcd_ctrl_port,control_lcd);
-	_delay_ms(100);
 }
 
 void INIT_LCD()
