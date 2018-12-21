@@ -38,25 +38,26 @@
 #define shift_cutsor_lift 0x10
 #define shift_cutsor_right 0x14
 //macros to interface with IC 8055
-#define write_to_calc(addr,source) \
-			calc_ctrl_port = IDLE; \	
-			calc_data_mode = OUTPUT; \
-			calc_addr_port = (addr) ; \
-			calc_data_out_port = (source) ; \
-			calc_ctrl_port = WRITE ; \
-			_delay_us(10); \
-			calc_ctrl_port = IDLE;	
+void write_to_calc(uint8_t addr, uint8_t source){
+	calc_ctrl_port = IDLE; 	
+	calc_data_mode = OUTPUT; 
+	calc_addr_port = addr ; 
+	calc_data_out_port = source ; 
+	calc_ctrl_port = WRITE ; 
+	_delay_us(1); 
+	calc_ctrl_port = IDLE;	
+}			
 
-#define read_from_calc(addr,dest)  \
-			calc_ctrl_port = IDLE; \
-			calc_data_mode = INPUT; \
-			calc_data_out_port = 0xFF; \	
-			calc_addr_port = (addr) ; \
-			(dest) = calc_data_in_port; \
-			calc_ctrl_port = READ ; \
-			_delay_us(10); \
-			calc_ctrl_port = IDLE ; 	
-
+uint8_t read_from_calc(uint8_t addr)  {
+	calc_ctrl_port = IDLE; 
+	calc_data_mode = INPUT; 
+	calc_data_out_port = 0xFF; 	// turn on pullup resestor
+	calc_addr_port = (addr) ; 
+	calc_ctrl_port = READ ; 
+	_delay_us(1); 
+	calc_ctrl_port = IDLE ; 
+	return calc_data_in_port; 
+}			
 #define init_calc() \
 			calc_addr_mode = OUTPUT;\
 			calc_ctrl_mode = OUTPUT;\
@@ -100,20 +101,17 @@ void print_to_LCD(char *str){
 
 char get_key_presed(){
 	uint8_t OUT_VAL[4] ={0XEF,0XDF,0XBF,0X7F};
-	uint8_t IN_VAL[4][4] ={{0XEE,0XED,0XEB,0XE7},
-						{0XDE,0XDD,0XDB,0XD7},
-						{0XBE,0XBD,0XBB,0XB7},
-						{0X7E,0X7D,0X7B,0X77}};
+	uint8_t IN_VAL[4] ={0XE,0XD,0XB,0X7};
 	while (1)
 	{
 			for (uint8_t i=0,tmp;i<4;i++)
 			{
 				write_to_calc(keypad_port,OUT_VAL[i]);
-				_delay_ms(1);
-				read_from_calc(keypad_port,tmp);
+				tmp = read_from_calc(keypad_port);
+				tmp &= 0X0F;
 				for(uint8_t j=0;j<4;j++)
 				{
-					if(tmp == IN_VAL[i][j]) return MyKeypad[i-4][j];
+					if(tmp == IN_VAL[j]) return MyKeypad[i-4][j];
 				}					
 			}
 	}
@@ -225,6 +223,7 @@ int main(void)
 	print_to_LCD("hello");
 	_delay_ms(1000);
 	SEND_TO_LCD(clr,CMD);
+	SEND_TO_LCD(start_1st_line,CMD);
 	char ch = get_key_presed();
 	write_to_LCD(ch);
 	return 0;
