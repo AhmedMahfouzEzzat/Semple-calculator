@@ -37,36 +37,28 @@
 #define start_2nd_line 0xC0
 #define shift_cutsor_lift 0x10
 #define shift_cutsor_right 0x14
-//macros to interface with IC 8055
-void write_to_calc(uint8_t addr, uint8_t source){
-	calc_ctrl_port = IDLE; 	
-	calc_data_mode = OUTPUT; 
-	calc_addr_port = addr ; 
-	calc_data_out_port = source ; 
-	calc_ctrl_port = WRITE ; 
-	_delay_us(1); 
-	calc_ctrl_port = IDLE;	
-}			
-
-uint8_t read_from_calc(uint8_t addr)  {
-	calc_ctrl_port = IDLE; 
-	calc_data_mode = INPUT; 
-	calc_data_out_port = 0xFF; 	// turn on pullup resestor
-	calc_addr_port = (addr) ; 
-	calc_ctrl_port = READ ; 
-	_delay_us(1); 
-	calc_ctrl_port = IDLE ; 
-	return calc_data_in_port; 
-}			
-#define init_calc() \
-			calc_addr_mode = OUTPUT;\
-			calc_ctrl_mode = OUTPUT;\
-			write_to_calc( calc_ctrl_reg , control_word );
 		
 char MyKeypad[4][4]={{'7','4','1','N'},
 					{'8','5','2','0'},
 					{'9','6','3','='},
 					{'/','x','-','+'}};
+uint8_t key_presed = 0;
+
+void write_to_calc(uint8_t addr, uint8_t source){	
+	calc_data_mode = OUTPUT; 
+	calc_addr_port = addr ; 
+	calc_data_out_port = source ; 
+	calc_ctrl_port = IDLE; 
+	calc_ctrl_port = WRITE ; 
+	_delay_us(1); 
+	calc_ctrl_port = IDLE;	
+}			
+			
+void init_calc(){ 
+	calc_addr_mode = OUTPUT;
+	calc_ctrl_mode = OUTPUT;
+	write_to_calc( calc_ctrl_reg , control_word );
+}
 
 void SEND_TO_LCD(char data , uint8_t mode )
 {
@@ -99,21 +91,45 @@ void print_to_LCD(char *str){
 	}
 }
 
+void write_to_keypad(uint8_t source){
+	calc_data_mode = 0XF0; 
+	calc_addr_port = keypad_port ; 
+	calc_data_out_port = source ; 
+	calc_ctrl_port = IDLE; 
+	calc_ctrl_port = WRITE ; 
+	_delay_ms(10); 
+	calc_ctrl_port = IDLE;
+}
+uint8_t read_from_keypad()
+{
+	uint8_t temp;
+	calc_data_mode = 0X00; 
+	calc_addr_port = keypad_port ; 
+	calc_ctrl_port = IDLE; 
+	calc_ctrl_port = READ ;
+	temp = calc_data_in_port ;
+	_delay_ms(10);
+	calc_ctrl_port = IDLE; 
+	return temp ;
+}
+
 char get_key_presed(){
 	uint8_t OUT_VAL[4] ={0XEF,0XDF,0XBF,0X7F};
-	uint8_t IN_VAL[4] ={0XE,0XD,0XB,0X7};
 	while (1)
 	{
-			for (uint8_t i=0,tmp;i<4;i++)
-			{
-				write_to_calc(keypad_port,OUT_VAL[i]);
-				tmp = read_from_calc(keypad_port);
-				tmp &= 0X0F;
-				for(uint8_t j=0;j<4;j++)
-				{
-					if(tmp == IN_VAL[j]) return MyKeypad[i-4][j];
-				}					
-			}
+		for (uint8_t i=0;i<4;i++)
+		{
+			uint8_t tmp;
+			write_to_keypad(OUT_VAL[i]);
+			tmp = read_from_keypad();
+			tmp &= 0X0F;
+			switch (tmp) {
+				case 0X0E :	_delay_ms(300) ; return MyKeypad[i][0]; break;
+				case 0X0D : _delay_ms(300) ; return MyKeypad[i][1]; break;
+				case 0X0B : _delay_ms(300) ; return MyKeypad[i][2]; break;
+				case 0X07 :	_delay_ms(300) ; return MyKeypad[i][3]; break;
+			}					
+		}		
 	}
 }
 
@@ -224,7 +240,10 @@ int main(void)
 	_delay_ms(1000);
 	SEND_TO_LCD(clr,CMD);
 	SEND_TO_LCD(start_1st_line,CMD);
-	char ch = get_key_presed();
-	write_to_LCD(ch);
+	while(1)
+	{
+		char ch = get_key_presed();
+		write_to_LCD(ch);
+	}
 	return 0;
 }
