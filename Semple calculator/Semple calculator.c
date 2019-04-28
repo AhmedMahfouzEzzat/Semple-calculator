@@ -156,7 +156,12 @@ int operat(int firNum ,int SecNum,char op){
 int calculate(){
 	char firist[8],second[8] ,op;
 	int index=0;
-	while(Expression[index] <='9'&& Expression[index]>='0' || Expression[index] =='-')
+	if (Expression[0] =='-'){
+		firist[0]=Expression[0];
+		index++;
+	}
+	
+	while(Expression[index] <='9'&& Expression[index]>='0')
 	{
 		firist[index]=Expression[index];
 		index++;
@@ -173,11 +178,7 @@ int calculate(){
 	second[index]='\0';
 	int fst = atoi(firist);
 	int sec = atoi(second);
-	/*char f[8],s[8];
-	itoa(fst,f,10);
-	itoa(sec,s,10);
-	print_to_LCD(f);
-	print_to_LCD(s);*/
+
 	return operat(fst,sec,op);
 }	
 
